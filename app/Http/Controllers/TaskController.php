@@ -6,17 +6,26 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Requests\TaskRequest;
+use App\repositories\TaskRepository;
+use App\Task;
 
 class TaskController extends Controller
 {
+
+    protected $tasks;
+
+    public function __construct(TaskRepository $tasks)
+    {
+        $this->tasks = $tasks;
+    }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        return view('tasks.index', ['tasks' => $this->tasks->forUser($request->user()),]);
     }
 
     /**
@@ -38,10 +47,8 @@ class TaskController extends Controller
     public function store(TaskRequest $request)
     {
 
-        $request->user()->tasks()->create([
-            'name' => $request->name,
-            ]);
-        return "Tarea agregada correctamente";
+        $request->user()->tasks()->create($request->all());
+        return redirect('/task')->with('success','Tarea creada correctamente: 3');
     }
 
     /**
@@ -61,9 +68,11 @@ class TaskController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Task $task)
     {
-        //
+        return view('tasks.edit', [
+            'task' => $task
+            ]);
     }
 
     /**
@@ -73,9 +82,11 @@ class TaskController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Task $task)
     {
-        //
+        $this->authorize('owner', $task);
+        $task->update($request->all());
+        return redirect('/task')->with('success','Tarea actualizada correctamente: 3');
     }
 
     /**
@@ -84,8 +95,10 @@ class TaskController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Task $task)
     {
-        //
+        $this->authorize('owner', $task);
+        $task->delete();
+        return redirect('/task')->with('success','Tarea eliminada correctamente :3');
     }
 }
